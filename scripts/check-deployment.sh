@@ -58,12 +58,11 @@ fi
 echo ""
 echo "=== Testing URLs ==="
 echo "CloudFront URL: https://$DIST_DOMAIN"
+echo "Custom Domain: https://mixtape.ninjabot.net"
 echo ""
 echo "Test with:"
 echo "  curl -I https://$DIST_DOMAIN"
-echo ""
-echo "If you have a custom domain configured, test it with:"
-echo "  curl -I https://yourdomain.com"
+echo "  curl -I https://mixtape.ninjabot.net"
 
 
 

@@ -9,6 +9,7 @@ import { Textarea } from './components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { RotateCcw, Sparkles, Copy, RefreshCw } from 'lucide-react';
 import mixtapeImage from './assets/9cef42a3913d9ff279e4e522c8890f8d19f449f6.png';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 interface Song {
   id: string;
@@ -28,6 +29,7 @@ const PREDEFINED_WORDS = [
 ];
 
 export default function App() {
+  const tracer = trace.getTracer('mixtape-creator-tool');
   const [tapeLength, setTapeLength] = useState<TapeLength>('60');
   const [sideASongs, setSideASongs] = useState<Song[]>([]);
   const [sideBSongs, setSideBSongs] = useState<Song[]>([]);
@@ -37,25 +39,80 @@ export default function App() {
 
   const maxDurationPerSide = tapeLength === '60' ? 30 * 60 : 45 * 60; // in seconds
 
+  const validateDurationForSide = (songs: Song[], side: 'A' | 'B') => {
+    const span = tracer.startSpan('mixtape.validate_duration', {
+      attributes: {
+        'mixtape.side': side,
+        'mixtape.song_count': songs.length,
+      },
+    });
+    const durationSeconds = songs.reduce((sum, currentSong) => sum + currentSong.duration, 0);
+    const isOverLimit = durationSeconds > maxDurationPerSide;
+    span.setAttribute('mixtape.duration_seconds', durationSeconds);
+    span.setAttribute('mixtape.max_duration_seconds', maxDurationPerSide);
+    span.setAttribute('mixtape.over_limit', isOverLimit);
+    span.setStatus({
+      code: isOverLimit ? SpanStatusCode.ERROR : SpanStatusCode.OK,
+      message: isOverLimit ? 'side_over_limit' : undefined,
+    });
+    span.end();
+  };
+
   const handleAddSong = (song: { name: string; artist: string; duration: number }) => {
+    const span = tracer.startSpan('mixtape.add_song', {
+      attributes: {
+        'song.name': song.name,
+        'song.artist': song.artist,
+        'song.duration_seconds': song.duration,
+        'mixtape.side': activeSide,
+        'user.action': 'add_song',
+      },
+    });
+
     const newSong: Song = {
       id: Date.now().toString() + Math.random().toString(36),
       ...song,
     };
 
     if (activeSide === 'A') {
-      setSideASongs([...sideASongs, newSong]);
+      const updated = [...sideASongs, newSong];
+      setSideASongs(updated);
+      validateDurationForSide(updated, 'A');
+      span.setAttribute('mixtape.side_song_count', updated.length);
     } else {
-      setSideBSongs([...sideBSongs, newSong]);
+      const updated = [...sideBSongs, newSong];
+      setSideBSongs(updated);
+      validateDurationForSide(updated, 'B');
+      span.setAttribute('mixtape.side_song_count', updated.length);
     }
+
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
   };
 
   const handleRemoveSong = (songId: string, side: 'A' | 'B') => {
+    const span = tracer.startSpan('mixtape.remove_song', {
+      attributes: {
+        'song.id': songId,
+        'mixtape.side': side,
+        'user.action': 'remove_song',
+      },
+    });
+
     if (side === 'A') {
-      setSideASongs(sideASongs.filter(song => song.id !== songId));
+      const updated = sideASongs.filter(song => song.id !== songId);
+      setSideASongs(updated);
+      validateDurationForSide(updated, 'A');
+      span.setAttribute('mixtape.side_song_count', updated.length);
     } else {
-      setSideBSongs(sideBSongs.filter(song => song.id !== songId));
+      const updated = sideBSongs.filter(song => song.id !== songId);
+      setSideBSongs(updated);
+      validateDurationForSide(updated, 'B');
+      span.setAttribute('mixtape.side_song_count', updated.length);
     }
+
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
   };
 
   const handleReorderSongs = (newOrder: Song[], side: 'A' | 'B') => {

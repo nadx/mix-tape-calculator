@@ -2,17 +2,11 @@
 
 ## Step 1: Get DNS Validation Records
 
-After requesting the certificate, you need to get the DNS validation records.
+After requesting the certificate, you need to get the DNS validation records:
 
-**Option A: Use the helper script**
-```bash
-./scripts/get-cert-validation.sh "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID"
-```
-
-**Option B: Use AWS CLI directly**
 ```bash
 aws acm describe-certificate \
-  --certificate-arn "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID" \
+  --certificate-arn arn:aws:acm:us-east-1:088878892064:certificate/66f5a53f-6188-48a2-9fd3-50496a4eeaa1 \
   --region us-east-1 \
   --query 'Certificate.DomainValidationOptions[0].ResourceRecord'
 ```
@@ -20,22 +14,22 @@ aws acm describe-certificate \
 **Expected Output:**
 ```json
 {
-    "Name": "_abc123def456.yourdomain.com",
+    "Name": "_abc123def456.mixtape.ninjabot.net",
     "Type": "CNAME",
     "Value": "_xyz789.abcdef.acm-validations.aws."
 }
 ```
 
-## Step 2: Add DNS Validation Record
+## Step 2: Add DNS Validation Record to GCP
 
-1. Go to your DNS provider (GCP Cloud DNS, Route53, etc.)
+1. Go to GCP Cloud DNS (or your DNS provider)
 2. Add a CNAME record:
-   - **Name**: Extract the subdomain from the `Name` field (e.g., if Name is `_abc123def456.yourdomain.com`, use `_abc123def456`)
+   - **Name**: `_abc123def456.mixtape` (the value from the `Name` field, without the domain)
    - **Type**: `CNAME`
    - **TTL**: `300` (or default)
-   - **Data/Value**: The exact value from the `Value` field (including trailing dot if present)
+   - **Data**: `_xyz789.abcdef.acm-validations.aws.` (the value from the `Value` field)
 
-**Note:** The name will be something like `_abc123def456` - add it as a subdomain of your domain (e.g., `_abc123def456.yourdomain.com`)
+**Note:** The name will be something like `_abc123def456.mixtape` - you need to add it as a subdomain of `ninjabot.net`
 
 ## Step 3: Wait for Validation
 
@@ -43,7 +37,7 @@ Check validation status:
 
 ```bash
 aws acm describe-certificate \
-  --certificate-arn "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID" \
+  --certificate-arn arn:aws:acm:us-east-1:088878892064:certificate/66f5a53f-6188-48a2-9fd3-50496a4eeaa1 \
   --region us-east-1 \
   --query 'Certificate.Status'
 ```
@@ -63,8 +57,8 @@ aws_region = "us-east-1"
 s3_bucket_name = "mixtape-creator-tool"
 environment = "production"
 cloudfront_price_class = "PriceClass_100"
-domain_name = "yourdomain.com"
-certificate_arn = "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID"
+domain_name = "mixtape.ninjabot.net"
+certificate_arn = "arn:aws:acm:us-east-1:088878892064:certificate/66f5a53f-6188-48a2-9fd3-50496a4eeaa1"
 ```
 
 ### Apply Terraform Changes
@@ -89,14 +83,14 @@ After Terraform apply completes:
 1. Wait 5-10 minutes for changes to propagate
 2. Test HTTPS:
    ```bash
-   curl -I https://yourdomain.com
+   curl -I https://mixtape.ninjabot.net
    ```
    Should return `200 OK` with valid SSL certificate
 
 3. Check certificate in browser:
-   - Visit `https://yourdomain.com`
+   - Visit `https://mixtape.ninjabot.net`
    - Click the lock icon in browser
-   - Should show valid certificate for your domain
+   - Should show valid certificate for `mixtape.ninjabot.net`
 
 ## Troubleshooting
 

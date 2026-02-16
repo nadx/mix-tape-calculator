@@ -31,9 +31,9 @@ This guide walks you through deploying the Mixtape Creator Tool to AWS with GitH
    - Repository access (owner or admin)
    - Ability to create repository secrets
 
-3. **DNS Provider Account** (Optional, for custom domain)
-   - Access to DNS management for your domain
-   - Ability to create CNAME records
+3. **GCP Account**
+   - Google Cloud Platform account
+   - Access to Cloud DNS or DNS management for `ninjabot.net` domain
 
 ### Required Software & Tools
 
@@ -448,12 +448,12 @@ cat .github/workflows/deploy.yml
 ### Step 1: Access GCP Cloud DNS
 
 **Action:**
-1. Go to your DNS provider (GCP Cloud DNS, Route53, etc.)
-2. Navigate to DNS management interface
-3. Select the zone for your domain
+1. Go to Google Cloud Console
+2. Navigate to "Cloud DNS" or your DNS management interface
+3. Select the zone for `ninjabot.net`
 
 **Expected Outcome:**
-- You're viewing DNS records for your domain
+- You're viewing DNS records for `ninjabot.net`
 - You can see existing DNS records
 
 ### Step 2: Create CNAME Record
@@ -461,7 +461,7 @@ cat .github/workflows/deploy.yml
 **Action:**
 1. Click "Create Record Set" or "Add Record"
 2. Configure:
-   - **Name:** Your subdomain (e.g., `mixtape` for `mixtape.yourdomain.com`)
+   - **Name:** `mixtape` (or `mixtape.ninjabot.net` depending on interface)
    - **Type:** `CNAME`
    - **TTL:** `300` (or your preferred value)
    - **Data/Value:** Your CloudFront domain name from Terraform output
@@ -476,9 +476,9 @@ cat .github/workflows/deploy.yml
 **Verification:**
 ```bash
 # Test DNS resolution (may take a few minutes to propagate)
-dig yourdomain.com
+dig mixtape.ninjabot.net
 # or
-nslookup yourdomain.com
+nslookup mixtape.ninjabot.net
 
 # Should resolve to CloudFront domain
 ```
@@ -495,8 +495,8 @@ nslookup yourdomain.com
 **Verification:**
 ```bash
 # Check from multiple locations
-dig @8.8.8.8 yourdomain.com
-dig @1.1.1.1 yourdomain.com
+dig @8.8.8.8 mixtape.ninjabot.net
+dig @1.1.1.1 mixtape.ninjabot.net
 ```
 
 ### Step 4: (Optional) Configure CloudFront for Custom Domain
@@ -506,7 +506,7 @@ dig @1.1.1.1 yourdomain.com
 1. **Request ACM Certificate** (in `us-east-1` region):
    ```bash
    aws acm request-certificate \
-     --domain-name yourdomain.com \
+     --domain-name mixtape.ninjabot.net \
      --validation-method DNS \
      --region us-east-1
    ```
@@ -558,8 +558,8 @@ git push origin main
 
 **Action:**
 1. Visit CloudFront URL: `https://[your-cloudfront-domain].cloudfront.net`
-2. Visit custom domain (if configured): `https://yourdomain.com`
-3. Test `/redirect` endpoint: `https://yourdomain.com/redirect` (or CloudFront URL)
+2. Visit custom domain: `https://mixtape.ninjabot.net`
+3. Test `/redirect` endpoint: `https://mixtape.ninjabot.net/redirect`
 
 **Expected Outcome:**
 - Home page loads correctly
@@ -574,7 +574,7 @@ git push origin main
 ### Step 1: Test Home Page
 
 **Action:**
-- Visit your CloudFront URL or custom domain
+- Visit `https://mixtape.ninjabot.net`
 
 **Expected Outcome:**
 - Page loads with mixtape interface
@@ -584,9 +584,9 @@ git push origin main
 ### Step 2: Test Redirect Page
 
 **Action:**
-- Visit `https://yourdomain.com/redirect` (or your CloudFront URL)
-- Visit `https://yourdomain.com/redirect?code=test123`
-- Visit `https://yourdomain.com/redirect?error=access_denied`
+- Visit `https://mixtape.ninjabot.net/redirect`
+- Visit `https://mixtape.ninjabot.net/redirect?code=test123`
+- Visit `https://mixtape.ninjabot.net/redirect?error=access_denied`
 
 **Expected Outcome:**
 - Page loads correctly
@@ -661,13 +661,13 @@ aws cloudfront get-distribution --id [DISTRIBUTION_ID]
 ### Issue: DNS Not Resolving
 
 **Symptoms:**
-- Custom domain doesn't resolve
+- `mixtape.ninjabot.net` doesn't resolve
 
 **Solution:**
-1. Verify CNAME record in your DNS provider
+1. Verify CNAME record in GCP DNS
 2. Check CNAME points to correct CloudFront domain
 3. Wait for DNS propagation (can take up to 48 hours, usually 5-15 minutes)
-4. Test with: `dig yourdomain.com`
+4. Test with: `dig mixtape.ninjabot.net`
 
 ### Issue: Redirect Page Not Working
 
@@ -719,8 +719,8 @@ aws cloudfront get-distribution --id [DISTRIBUTION_ID] --query "Distribution.Sta
 
 ### Test DNS Resolution
 ```bash
-dig yourdomain.com
-nslookup yourdomain.com
+dig mixtape.ninjabot.net
+nslookup mixtape.ninjabot.net
 ```
 
 ---
@@ -733,7 +733,7 @@ Before deployment, ensure:
 - [ ] Terraform installed
 - [ ] Node.js 20+ installed
 - [ ] GitHub repository access
-- [ ] DNS provider access (if using custom domain)
+- [ ] GCP DNS access for ninjabot.net
 - [ ] All prerequisites met
 
 After deployment, verify:

@@ -6,21 +6,9 @@ A simple site that connects to Spotify via Supabase to allow users to query for 
 
 ## Running the code
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+Run `npm i` to install the dependencies.
 
-2. **Configure environment variables:**
-   - Copy `.env.example` to `.env`
-   - Fill in your Supabase credentials (see [CONFIGURATION.md](./CONFIGURATION.md) for details)
-   
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-
-**📘 Configuration Guide:** See [CONFIGURATION.md](./CONFIGURATION.md) for detailed setup instructions for frontend, backend, and infrastructure.
+Run `npm run dev` to start the development server.
 
 ## Features
 
@@ -42,7 +30,6 @@ The deployment guide includes:
 - Troubleshooting guide
 
 **Additional Documentation:**
-- [CONFIGURATION.md](./CONFIGURATION.md) - Complete configuration guide for frontend, backend, and infrastructure
 - [docs/CERTIFICATE_SETUP.md](./docs/CERTIFICATE_SETUP.md) - SSL certificate setup
 - [docs/FIX_S3_PERMISSIONS.md](./docs/FIX_S3_PERMISSIONS.md) - S3/CloudFront troubleshooting
 - [docs/FIX_CUSTOM_DOMAIN.md](./docs/FIX_CUSTOM_DOMAIN.md) - Custom domain configuration
@@ -74,9 +61,10 @@ The deployment guide includes:
      - `AWS_SECRET_ACCESS_KEY`: From Terraform output `github_actions_secret_access_key`
      - `CLOUDFRONT_DISTRIBUTION_ID`: From Terraform output `github_actions_cloudfront_distribution_id`
 
-4. **Configure Supabase Edge Functions:**
-   - Set environment variables in Supabase dashboard (see [CONFIGURATION.md](./CONFIGURATION.md))
-   - Required: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
+4. **Update GitHub Actions workflow** (if needed):
+   Edit `.github/workflows/deploy.yml` and update:
+   - `S3_BUCKET`: Your S3 bucket name
+   - `AWS_REGION`: Your AWS region
 
 ### GCP Subdomain Setup
 
@@ -85,7 +73,7 @@ The deployment guide includes:
    - Type: `CNAME`
    - Value: Your CloudFront distribution domain (from Terraform output `cloudfront_domain_name`)
 
-2. Your custom domain will now point to your AWS-hosted site.
+2. The subdomain `mixtape.ninjabot.net` will now redirect to your AWS-hosted site.
 
 ### Automatic Deployment
 
