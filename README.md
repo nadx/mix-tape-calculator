@@ -1,6 +1,6 @@
 # Mixtape Creator Tool
 
-This is a code bundle for Mixtape Creator Tool. The original project is available at https://www.figma.com/design/oSc6MfUdABJO6C0t9EDudY/Mixtape-Creator-Tool.
+This is a code bundle for Mixtape Creator Tool.  [Mixtape C
 
 A simple site that connects to Spotify via Supabase to allow users to query for songs and get song lengths as they create a mixtape.
 
