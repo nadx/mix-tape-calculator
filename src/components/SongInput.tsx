@@ -5,6 +5,7 @@ import { Label } from './ui/label';
 import { Search, Loader2, Music } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 interface SongInputProps {
   onAddSong: (song: { name: string; artist: string; duration: number }) => void;
@@ -20,6 +21,7 @@ interface SpotifyTrack {
 }
 
 export function SongInput({ onAddSong }: SongInputProps) {
+  const tracer = trace.getTracer('mixtape-creator-tool');
   const [songName, setSongName] = useState('');
   const [artist, setArtist] = useState('');
   const [manualDuration, setManualDuration] = useState('');
@@ -34,66 +36,86 @@ export function SongInput({ onAddSong }: SongInputProps) {
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    await tracer.startActiveSpan('user.fetch_spotify_track', {
+      attributes: {
+        'user.element': 'button',
+        'user.action': 'fetch_from_spotify',
+        'song.name': songName.trim(),
+        'song.artist': artist.trim() || '',
+        'song.search.artist_provided': Boolean(artist.trim()),
+        'api.endpoint': '/make-server-20b8aa27/search-track',
+      },
+    }, async (span) => {
+      setIsLoading(true);
+      setError('');
 
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-20b8aa27/search-track`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({
-            songName: songName.trim(),
-            artist: artist.trim() || undefined,
-          }),
-        }
-      );
+      try {
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-20b8aa27/search-track`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${publicAnonKey}`,
+            },
+            body: JSON.stringify({
+              songName: songName.trim(),
+              artist: artist.trim() || undefined,
+            }),
+          }
+        );
 
-      const data = await response.json();
+        span.setAttribute('http.response.status_code', response.status);
+        span.setAttribute('api.status', response.status);
+        const data = await response.json();
 
-      console.log('Spotify search response:', data);
+        console.log('Spotify search response:', data);
 
-      if (data.error) {
-        setError(data.error);
-        console.error('Spotify search error:', data.error);
-      } else if (data.multiple && data.results && Array.isArray(data.results) && data.results.length > 1) {
-        // Multiple results - show selection dialog
-        console.log(`Showing dialog with ${data.results.length} results`, data.results);
-        // Set results first, then dialog state
-        setSearchResults(data.results);
-        // Use setTimeout to ensure state updates in correct order
-        setTimeout(() => {
-          console.log('Setting dialog to open');
+        if (data.error) {
+          setError(data.error);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: data.error });
+          console.error('Spotify search error:', data.error);
+        } else if (data.multiple && data.results && Array.isArray(data.results) && data.results.length > 1) {
+          console.log(`Showing dialog with ${data.results.length} results`, data.results);
+          setSearchResults(data.results);
+          setTimeout(() => {
+            console.log('Setting dialog to open');
+            setShowResultsDialog(true);
+          }, 0);
+          span.setAttribute('spotify.search.result_count', data.results.length);
+          span.setStatus({ code: SpanStatusCode.OK });
+        } else if (data.results && Array.isArray(data.results) && data.results.length > 1) {
+          console.log(`Showing dialog with ${data.results.length} results (no multiple flag)`);
+          setSearchResults(data.results);
           setShowResultsDialog(true);
-        }, 0);
-      } else if (data.results && Array.isArray(data.results) && data.results.length > 1) {
-        // Handle case where multiple results are returned but 'multiple' flag might be missing
-        console.log(`Showing dialog with ${data.results.length} results (no multiple flag)`);
-        setSearchResults(data.results);
-        setShowResultsDialog(true);
-      } else {
-        // Single result - add directly (backward compatible)
-        console.log('Adding single result directly');
-        onAddSong({
-          name: data.songName,
-          artist: data.artist,
-          duration: data.duration,
-        });
-        setSongName('');
-        setArtist('');
-        setManualDuration('');
-        setError('');
+          span.setAttribute('spotify.search.result_count', data.results.length);
+          span.setStatus({ code: SpanStatusCode.OK });
+        } else {
+          console.log('Adding single result directly');
+          onAddSong({
+            name: data.songName,
+            artist: data.artist,
+            duration: data.duration,
+          });
+          setSongName('');
+          setArtist('');
+          setManualDuration('');
+          setError('');
+          span.setAttribute('spotify.search.result_count', 1);
+          span.setStatus({ code: SpanStatusCode.OK });
+        }
+      } catch (err) {
+        setError('Failed to fetch song duration. Please try again.');
+        span.setStatus({ code: SpanStatusCode.ERROR, message: 'fetch_failed' });
+        if (err instanceof Error) {
+          span.recordException(err);
+        }
+        console.error('Error fetching song:', err);
+      } finally {
+        setIsLoading(false);
+        span.end();
       }
-    } catch (err) {
-      setError('Failed to fetch song duration. Please try again.');
-      console.error('Error fetching song:', err);
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const handleManualAdd = () => {

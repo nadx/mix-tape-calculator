@@ -3,7 +3,7 @@
 ## Problem Diagnosis
 
 You're seeing:
-- **403 ERROR** from CloudFront when accessing your site URL
+- **403 ERROR** from CloudFront when accessing `https://mixtape.ninjabot.net/`
 - **Access Denied** XML from S3 when accessing CloudFront directly
 
 This typically means:
@@ -107,7 +107,7 @@ aws cloudfront get-distribution --id $DIST_ID --query 'Distribution.Status'
 
 3. Test custom domain:
    ```bash
-   curl -I https://your-cloudfront-domain.cloudfront.net
+   curl -I https://mixtape.ninjabot.net
    ```
    Should return `200 OK`
 
@@ -179,7 +179,7 @@ echo "Invalidating CloudFront cache..."
 aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
 
 echo "Done! Wait 2-5 minutes for CloudFront to update."
-echo "Test: https://your-cloudfront-domain.cloudfront.net"
+echo "Test: https://mixtape.ninjabot.net"
 ```
 
 Save as `deploy.sh`, make executable (`chmod +x deploy.sh`), and run it.

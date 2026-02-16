@@ -6,43 +6,44 @@ You've requested the certificate. Here are the immediate next steps:
 
 ### Step 1: Get DNS Validation Records
 
-**Use the helper script:**
-```bash
-./scripts/get-cert-validation.sh "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID"
-```
+Run this command:
 
-**Or use AWS CLI directly:**
 ```bash
 aws acm describe-certificate \
-  --certificate-arn "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID" \
+  --certificate-arn arn:aws:acm:us-east-1:088878892064:certificate/66f5a53f-6188-48a2-9fd3-50496a4eeaa1 \
   --region us-east-1 \
   --query 'Certificate.DomainValidationOptions[0].ResourceRecord'
+```
+
+**Or use the helper script:**
+```bash
+./scripts/get-cert-validation.sh
 ```
 
 **Expected Output:**
 ```json
 {
-    "Name": "_abc123def456.yourdomain.com",
+    "Name": "_abc123def456.mixtape.ninjabot.net",
     "Type": "CNAME",
     "Value": "_xyz789.abcdef.acm-validations.aws."
 }
 ```
 
-### Step 2: Add CNAME Record to DNS
+### Step 2: Add CNAME Record to GCP DNS
 
-1. Go to your DNS provider (GCP Cloud DNS, Route53, etc.)
+1. Go to GCP Cloud DNS (or your DNS provider for ninjabot.net)
 2. Add a new CNAME record:
-   - **Name**: Extract the subdomain from the `Name` field (e.g., if Name is `_abc123def456.yourdomain.com`, use `_abc123def456`)
+   - **Name**: `_abc123def456.mixtape` (the part before `.ninjabot.net`)
    - **Type**: `CNAME`
    - **TTL**: `300`
-   - **Data/Value**: The exact value from the `Value` field (including trailing dot if present)
+   - **Data/Value**: `_xyz789.abcdef.acm-validations.aws.` (exact value from output, including trailing dot)
 
 ### Step 3: Wait for Validation
 
 Check status:
 ```bash
 aws acm describe-certificate \
-  --certificate-arn "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID" \
+  --certificate-arn arn:aws:acm:us-east-1:088878892064:certificate/66f5a53f-6188-48a2-9fd3-50496a4eeaa1 \
   --region us-east-1 \
   --query 'Certificate.Status'
 ```
@@ -58,8 +59,8 @@ aws_region = "us-east-1"
 s3_bucket_name = "mixtape-creator-tool"
 environment = "production"
 cloudfront_price_class = "PriceClass_100"
-domain_name = "yourdomain.com"
-certificate_arn = "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID"
+domain_name = "mixtape.ninjabot.net"
+certificate_arn = "arn:aws:acm:us-east-1:088878892064:certificate/66f5a53f-6188-48a2-9fd3-50496a4eeaa1"
 ```
 
 Then apply:
@@ -107,7 +108,7 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
 **Expected Outcome:**
 - Files uploaded to S3
 - CloudFront cache invalidated
-- Wait 2-5 minutes, then test your CloudFront URL or custom domain
+- Wait 2-5 minutes, then test: `https://mixtape.ninjabot.net`
 
 ### Verify It Worked
 
@@ -121,8 +122,8 @@ aws s3 ls s3://mixtape-creator-tool/
 ```
 
 Then test in browser:
-- Your CloudFront URL (from `terraform output cloudfront_url`) - Should work now
-- Your custom domain (if configured) - Should work now
+- `https://d1hirkdjxalrbh.cloudfront.net` - Should work now
+- `https://mixtape.ninjabot.net` - Should work now
 
 ---
 
@@ -141,8 +142,8 @@ Then test in browser:
    - Test in 2-5 minutes
 
 3. **After Both Are Fixed:**
-   - Site should work at your CloudFront URL or custom domain
-   - SSL certificate will be valid (if using custom domain)
+   - Site should work at `https://mixtape.ninjabot.net`
+   - SSL certificate will be valid
    - `/redirect` page will work
 
 ---

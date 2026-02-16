@@ -13,8 +13,8 @@ Use this checklist to ensure you have everything needed before starting deployme
   - Repository owner/admin access
   - Ability to create repository secrets
 
-- [ ] **DNS Provider Account** (Optional, for custom domain)
-  - Access to DNS management for your domain
+- [ ] **GCP Account**
+  - Access to Cloud DNS or DNS management for `ninjabot.net`
   - Ability to create CNAME records
 
 ## ✅ Software Installation

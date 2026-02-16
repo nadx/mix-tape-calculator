@@ -45,52 +45,24 @@ After running `terraform apply`, you'll get outputs that need to be added to Git
    - `AWS_SECRET_ACCESS_KEY`: From `github_actions_secret_access_key` output
    - `CLOUDFRONT_DISTRIBUTION_ID`: From `github_actions_cloudfront_distribution_id` output
 
-## Configuration
-
-### Quick Start
-
-1. **Copy the example variables file:**
-   ```bash
-   cp terraform.tfvars.example terraform.tfvars
-   ```
-
-2. **Edit `terraform.tfvars`** with your values (see [VARIABLES.md](./VARIABLES.md) for details)
-
-3. **Initialize and apply:**
-   ```bash
-   terraform init
-   terraform plan
-   terraform apply
-   ```
-
-⚠️ **Important:** The `terraform.tfvars` file contains sensitive data and is gitignored. Never commit it to version control.
-
-### Custom Domain (Optional)
+## Custom Domain (Optional)
 
 To use a custom domain:
 
 1. Create an ACM certificate in `us-east-1` (required for CloudFront)
-2. Update `terraform.tfvars`:
+2. Update `variables.tf` or create a `terraform.tfvars` file:
    ```hcl
-   domain_name    = "mixtape.yourdomain.com"
-   certificate_arn = "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID"
+   domain_name    = "mixtape.ninjabot.net"
+   certificate_arn = "arn:aws:acm:us-east-1:..."
    ```
-3. Apply Terraform: `terraform apply`
-4. Configure DNS: Create a CNAME pointing to the CloudFront domain
-
-See [VARIABLES.md](./VARIABLES.md) for detailed instructions and all available variables.
+3. Update the CloudFront distribution in `main.tf` to use the certificate and add an alias
 
 ## Variables
 
-See [VARIABLES.md](./VARIABLES.md) for complete variable documentation.
-
-Quick reference:
 - `aws_region`: AWS region (default: `us-east-1`)
 - `s3_bucket_name`: S3 bucket name (default: `mixtape-creator-tool`)
 - `environment`: Environment name (default: `production`)
 - `cloudfront_price_class`: CloudFront price class (default: `PriceClass_100`)
-- `domain_name`: Custom domain name (optional, default: `""`)
-- `certificate_arn`: ACM certificate ARN for custom domain (optional, default: `""`)
 
 ## Outputs
 

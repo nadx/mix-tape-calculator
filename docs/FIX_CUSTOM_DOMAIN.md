@@ -3,7 +3,7 @@
 ## Problem
 
 - ✅ CloudFront URL works: `https://d1hirkdjxalrbh.cloudfront.net`
-- ❌ Custom domain 403: `https://yourdomain.com`
+- ❌ Custom domain 403: `https://mixtape.ninjabot.net`
 
 ## Root Cause
 
@@ -42,12 +42,12 @@ terraform apply
 
 3. **Test the custom domain:**
    ```bash
-   curl -I https://yourdomain.com
+   curl -I https://mixtape.ninjabot.net
    ```
    Should return `200 OK` (not 403)
 
 4. **Verify SSL certificate:**
-   - Visit `https://yourdomain.com` in browser
+   - Visit `https://mixtape.ninjabot.net` in browser
    - Check the lock icon - should show valid certificate
 
 ## Troubleshooting
@@ -56,7 +56,7 @@ terraform apply
 
 - Wait longer (CloudFront updates can take up to 20 minutes)
 - Check distribution status is "Deployed"
-- Verify CNAME is still correct: `dig yourdomain.com`
+- Verify CNAME is still correct: `dig mixtape.ninjabot.net`
 - Clear browser cache or try incognito mode
 
 ### Certificate Errors
